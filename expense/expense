@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+import psycopg2
+from psycopg2.extras import DictCursor
+
+
+if __name__ == "__main__":
+    try:
+        with psycopg2.connect(dbname="expense") as connection:
+            with connection.cursor(cursor_factory=DictCursor) as cursor:
+                cursor.execute("SELECT * FROM expenses")
+                rows = cursor.fetchall()
+    finally:
+        connection.close()
+
+    for row in rows:
+        print(f"{row['id']} | {row['created_on']} | {row['amount']:>12} | {row['memo']}")
