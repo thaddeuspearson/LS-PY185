@@ -93,9 +93,9 @@ def display_help():
 
 def handle_cmdline_args(cursor):
     """Retrieves and Processes cmdline arguments"""
-    args = argv[1:]
-    if args:
-        match args[0].lower():
+    cmd, args = argv[1], argv[2:]
+    if cmd:
+        match cmd.lower():
             case "add":
                 add_expenses(cursor, args)
             case "list":
