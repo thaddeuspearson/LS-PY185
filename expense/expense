@@ -1,6 +1,10 @@
 #!/usr/bin/env python
+from datetime import date
 import psycopg2
-from psycopg2 import OperationalError, InterfaceError
+from psycopg2 import (
+    DataError, IntegrityError, InterfaceError,
+    OperationalError, ProgrammingError
+)
 from psycopg2.extras import DictCursor
 from sys import argv, exit
 from textwrap import dedent
@@ -11,7 +15,8 @@ def get_connection(dbname):
     try:
         return psycopg2.connect(dbname=dbname)
     except OperationalError:
-        exit(f"Unable to retrieve a connection to: {dbname}. Exiting.")
+        print(f"Unable to retrieve a connection to: {dbname}. Exiting.")
+        exit(1)
 
 
 def get_cursor(db_connection):
@@ -19,10 +24,8 @@ def get_cursor(db_connection):
     try:
         return db_connection.cursor(cursor_factory=DictCursor)
     except InterfaceError:
-        exit(
-            "Unable to initialize a cursor. "
-            "Closing database connection and Exiting."
-        )
+        print("Unable to initialize a cursor. Closing connection and exiting.")
+        exit(1)
 
 
 def get_db_connection_and_cursor(dbname):
@@ -32,17 +35,40 @@ def get_db_connection_and_cursor(dbname):
     return connection, cursor
 
 
-def execute_select_query(db_cursor, query):
-    """executes a select SQL query  using the given db_cursor"""
-    cursor.execute(query)
-    return db_cursor.fetchall()
+def execute_query(cursor, query):
+    """Attempts to execute the given SQL query using the given cursor"""
+    try:
+        cursor.execute(query)
+    except (
+        DataError, IntegrityError, InterfaceError, 
+        OperationalError, ProgrammingError) as e:
+        print(e)
+        exit(1)
+
+
+def add_expenses(cursor, args):
+    """Inserts a new expense to the connected database"""
+    if len(args) < 2:
+        print("You must provide an amount and memo")
+        exit(1)
+    try:
+        amount = round(float(args[1]), 2)
+    except ValueError:
+        print("The amount must be an integer or a float")
+        exit(1)
+    memo = args[2]
+    created_on = date.today()
+    query = f"INSERT INTO expenses (amount, memo, created_on) \
+            VALUES ({amount}, '{memo}', '{created_on}')"
+    execute_query(cursor, query)
 
 
 def list_expenses(db_cursor):
     """Prints all expenses in a '|' delimited table"""
     query = "SELECT * FROM expenses"
-    expenses = execute_select_query(cursor, query)
-
+    execute_query(cursor, query)
+    expenses = cursor.fetchall()
+    
     for expense in expenses:
         print(
             f"{expense['id']} | {expense['created_on']} | "
@@ -65,10 +91,13 @@ def display_help():
     """))
 
 
-def handle_cmdline_args():
+def handle_cmdline_args(cursor):
     """Retrieves and Processes cmdline arguments"""
-    if len(argv) > 1:
-        match argv[1].lower():
+    args = argv[1:]
+    if args:
+        match args[0].lower():
+            case "add":
+                add_expenses(cursor, args)
             case "list":
                 list_expenses(cursor)
     else:
@@ -78,12 +107,8 @@ def handle_cmdline_args():
 if __name__ == "__main__":
     try:
         connection, cursor = get_db_connection_and_cursor(dbname="expense")
-        handle_cmdline_args()
-        # if argv[0]:
-        #     match argv[1].lower():
-        #         case "list":
-        #             list_expenses(cursor)
-        #         case "help":
-        #             display_help()
+        with connection:
+            with cursor:
+                handle_cmdline_args(cursor)
     finally:
         connection.close()
