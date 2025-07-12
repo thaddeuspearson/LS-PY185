@@ -10,7 +10,6 @@ from psycopg2 import (
 from psycopg2.extras import DictCursor
 
 
-
 def get_connection(dbname):
     """Gets a connection to the given database"""
     try:
@@ -113,7 +112,7 @@ def handle_cmdline_args(cursor):
 
 if __name__ == "__main__":
     try:
-        connection, cursor = get_db_connection_and_cursor(dbname="expense")
+        connection, cursor = get_db_connection_and_cursor(dbname="expenses")
         with connection:
             with cursor:
                 handle_cmdline_args(cursor)
