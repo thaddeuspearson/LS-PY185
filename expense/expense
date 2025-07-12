@@ -65,15 +65,25 @@ def display_help():
     """))
 
 
+def handle_cmdline_args():
+    """Retrieves and Processes cmdline arguments"""
+    if len(argv) > 1:
+        match argv[1].lower():
+            case "list":
+                list_expenses(cursor)
+    else:
+        display_help()
+
+
 if __name__ == "__main__":
     try:
         connection, cursor = get_db_connection_and_cursor(dbname="expense")
-
-        if argv[0]:
-            match argv[1].lower():
-                case "list":
-                    list_expenses(cursor)
-                case "help":
-                    display_help()
+        handle_cmdline_args()
+        # if argv[0]:
+        #     match argv[1].lower():
+        #         case "list":
+        #             list_expenses(cursor)
+        #         case "help":
+        #             display_help()
     finally:
         connection.close()
