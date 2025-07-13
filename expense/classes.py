@@ -81,7 +81,7 @@ class ExpenseData:
         """
         for expense in expenses:
             print(
-                f"{expense['id']} | {expense['created_on']} | "
+                f"  {expense['id']} | {expense['created_on']} | "
                 f"{expense['amount']:>12} | {expense['memo']}"
             )
 
@@ -127,17 +127,52 @@ class ExpenseData:
         Prints all expenses with memos that contain the given search_term
         :param search_term (str): the term to filter for in the db query
         """
-        query = dedent("""
-            SELECT * FROM expenses WHERE memo ILIKE (%s)
-        """)
-        print(search_term)
         if not search_term:
             print("You must provide a search term. Exiting.")
             sys.exit(1)
 
+        query = dedent("""
+            SELECT * FROM expenses WHERE memo ILIKE (%s)
+        """)
+
         expenses = self.db_connection.execute_query(query, f"%{search_term}%")
         if expenses:
             ExpenseData.display_expenses(expenses)
+
+    def delete_expenses(self, expense_ids: list):
+        """
+        Deletes the expenses associated with the given expense ids
+        :param expense_ids (list<str>): the ids of the expense to delete
+        """
+        if not expense_ids or not expense_ids[0].isnumeric():
+            print("You must provide at least 1 expense id. Exiting.")
+            sys.exit(1)
+
+        deleted_expenses = []
+        invalid_ids = []
+
+        for id in expense_ids:
+            query = dedent("""
+                SELECT * FROM expenses WHERE id = (%s)
+            """)
+            expense = self.db_connection.execute_query(query, id)
+            if expense:
+                query = dedent("""
+                    DELETE FROM expenses WHERE id = (%s)
+                """)
+                self.db_connection.execute_query(query, id)
+                deleted_expenses.append(expense)
+            else:
+                invalid_ids.append(id)
+
+        if deleted_expenses:
+            print("The following expense(s) have been deleted:")
+            for expense in deleted_expenses:
+                ExpenseData.display_expenses(expense)
+            print()
+        if invalid_ids:
+            print(f"No expense(s) found with id(s): {', '.join(invalid_ids)}.")
+            print()
 
 
 class CLI:
@@ -179,5 +214,7 @@ class CLI:
                     self.expense_data.list_expenses()
                 case "search":
                     self.expense_data.search_expenses(' '.join(args))
+                case "delete":
+                    self.expense_data.delete_expenses(args)
         else:
             self.display_help()
