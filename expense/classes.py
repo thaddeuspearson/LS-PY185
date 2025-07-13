@@ -74,6 +74,14 @@ class ExpenseData:
     def __init__(self, dbname):
         self.db_connection = DbConnection(dbname)
 
+    @staticmethod
+    def display_expenses(expenses):
+        for expense in expenses:
+            print(
+                f"{expense['id']} | {expense['created_on']} | "
+                f"{expense['amount']:>12} | {expense['memo']}"
+            )
+
     def add_expense(self, args: list):
         """
         Inserts a new expense to the connected database
@@ -109,11 +117,24 @@ class ExpenseData:
 
         expenses = self.db_connection.execute_query(query)
         if expenses:
-            for expense in expenses:
-                print(
-                    f"{expense['id']} | {expense['created_on']} | "
-                    f"{expense['amount']:>12} | {expense['memo']}"
-                )
+            ExpenseData.display_expenses(expenses)
+
+    def search_expenses(self, search_term: str):
+        """
+        Prints all expenses with memos that contain the given search_term
+        :param search_term:
+        """
+        query = dedent("""
+            SELECT * FROM expenses WHERE memo ILIKE (%s)
+        """)
+        print(search_term)
+        if not search_term:
+            print("You must provide a search term. Exiting.")
+            sys.exit(1)
+
+        expenses = self.db_connection.execute_query(query, f"%{search_term}%")
+        if expenses:
+            ExpenseData.display_expenses(expenses)
 
 
 class CLI:
@@ -153,5 +174,7 @@ class CLI:
                     self.expense_data.add_expense(args)
                 case "list":
                     self.expense_data.list_expenses()
+                case "search":
+                    self.expense_data.search_expenses(' '.join(args))
         else:
             self.display_help()
