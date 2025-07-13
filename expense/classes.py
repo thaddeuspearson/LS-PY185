@@ -4,6 +4,7 @@ Custom classes for expense program
 import sys
 from datetime import date
 from textwrap import dedent
+from contextlib import contextmanager
 from psycopg2 import (
     connect, DataError, IntegrityError,
     InterfaceError, OperationalError,
@@ -18,24 +19,36 @@ class DbConnection:
     """
     def __init__(self, dbname):
         self.dbname = dbname
-        self.connection = self.get_connection()
 
-    def __del__(self):
-        self.close()
-
-    def close(self):
-        self.connection.close()
-
-    def get_connection(self):
+    @contextmanager
+    def _database_connect(self):
         """
-        Gets a connection to the given database
+        Creates a connection context manager for the given database
         """
+        connection = None
         try:
             connection = connect(dbname=self.dbname)
             connection.autocommit = True
-            return connection
+            with connection:
+                yield connection
         except OperationalError:
             print(f"Unable to get a connection to: {self.dbname}. Exiting.")
+            sys.exit(1)
+        finally:
+            if connection:
+                connection.close()
+
+    @contextmanager
+    def _database_cursor(self):
+        """
+        Creates a cursor context manager for the given database
+        """
+        try:
+            with self._database_connect() as connection:
+                with connection.cursor(cursor_factory=DictCursor) as cursor:
+                    yield cursor
+        except InterfaceError as e:
+            print(e)
             sys.exit(1)
 
     def execute_query(self, query, *query_args):
@@ -44,12 +57,11 @@ class DbConnection:
         returns rows if applicable
         """
         try:
-            with self.connection.cursor(cursor_factory=DictCursor) as cursor:
+            with self._database_cursor() as cursor:
                 cursor.execute(query, query_args)
                 return cursor.fetchall() if cursor.description else None
         except (
-            DataError, IntegrityError, InterfaceError,
-            OperationalError, ProgrammingError
+            DataError, IntegrityError, OperationalError, ProgrammingError
         ) as e:
             print(e)
             sys.exit(1)
@@ -62,9 +74,10 @@ class ExpenseData:
     def __init__(self, dbname):
         self.db_connection = DbConnection(dbname)
 
-    def add_expenses(self, args):
+    def add_expenses(self, args: list):
         """
         Inserts a new expense to the connected database
+        :param args (list): cmdline args
         """
         if len(args) < 2:
             print("You must provide an amount and memo")
@@ -90,7 +103,10 @@ class ExpenseData:
         """
         Prints all expenses in a '|' delimited table
         """
-        query = "SELECT * FROM expenses"
+        query = dedent("""
+            SELECT * FROM expenses
+        """)
+
         expenses = self.db_connection.execute_query(query)
         if expenses:
             for expense in expenses:
@@ -104,7 +120,7 @@ class CLI:
     """
     Driver class for the expense program
     """
-    def __init__(self, dbname):
+    def __init__(self, dbname: str):
         self.expense_data = ExpenseData(dbname)
 
     @classmethod
@@ -124,21 +140,18 @@ class CLI:
             search QUERY - list expenses with a matching memo field
         """))
 
-    def run(self):
+    def run(self, args: list):
         """
         Retrieves and Processes cmdline arguments for the expense program
+        :param args (list): cmdline args
         """
-        try:
-            cmd = sys.argv[1] if len(sys.argv) > 1 else None
-            args = sys.argv[2:]
+        cmd, args = (args[0], args[1:]) if args else (None, None)
 
-            if cmd:
-                match cmd.lower():
-                    case "add":
-                        self.expense_data.add_expenses(args)
-                    case "list":
-                        self.expense_data.list_expenses()
-            else:
-                self.display_help()
-        finally:
-            self.expense_data.db_connection.close()
+        if cmd:
+            match cmd.lower():
+                case "add":
+                    self.expense_data.add_expenses(args)
+                case "list":
+                    self.expense_data.list_expenses()
+        else:
+            self.display_help()
