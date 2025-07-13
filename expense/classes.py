@@ -76,6 +76,9 @@ class ExpenseData:
 
     @staticmethod
     def display_expenses(expenses):
+        """
+        Prints all returned rows with columns delimited by '|'
+        """
         for expense in expenses:
             print(
                 f"{expense['id']} | {expense['created_on']} | "
@@ -122,7 +125,7 @@ class ExpenseData:
     def search_expenses(self, search_term: str):
         """
         Prints all expenses with memos that contain the given search_term
-        :param search_term:
+        :param search_term (str): the term to filter for in the db query
         """
         query = dedent("""
             SELECT * FROM expenses WHERE memo ILIKE (%s)
