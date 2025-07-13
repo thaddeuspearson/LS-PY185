@@ -74,7 +74,7 @@ class ExpenseData:
     def __init__(self, dbname):
         self.db_connection = DbConnection(dbname)
 
-    def add_expenses(self, args: list):
+    def add_expense(self, args: list):
         """
         Inserts a new expense to the connected database
         :param args (list): cmdline args
@@ -150,7 +150,7 @@ class CLI:
         if cmd:
             match cmd.lower():
                 case "add":
-                    self.expense_data.add_expenses(args)
+                    self.expense_data.add_expense(args)
                 case "list":
                     self.expense_data.list_expenses()
         else:
