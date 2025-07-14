@@ -73,13 +73,35 @@ class ExpenseData:
     """
     def __init__(self, dbname):
         self.db_connection = DbConnection(dbname)
+        self._setup_schema()
+
+    def _setup_schema(self):
+        """Checks if the expenses table exists and creates it if not"""
+        query = dedent("""
+            SELECT COUNT(*) FROM information_schema.tables
+            WHERE table_schema = 'public'
+            AND table_name = 'expenses';
+        """)
+        table_exists = self.db_connection.execute_query(query)[0][0]
+
+        if not table_exists:
+            query = dedent("""
+                CREATE TABLE expenses (
+                    id serial PRIMARY KEY,
+                    amount numeric(6, 2) NOT NULL CHECK (amount > 0),
+                    memo text NOT NULL,
+                    created_on date NOT NULL
+                )
+            """)
+            self.db_connection.execute_query(query)
+            print("Expenses table created.")
 
     def _display_count(self, count):
         """
         Prints the count of rows returned from the associated db query
         :param count int: number of returned rows from the associated db query
         """
-        print(f"There {'is' if count == 1 else 'are'} {count} "
+        print(f"There {'is' if count == 1 else 'are'} {count if count else 'no'} "
               f"expense{'' if count == 1 else 's'}.")
 
     def _display_total(self, expenses):
@@ -106,8 +128,6 @@ class ExpenseData:
                     f"{expense['amount']:>12} | {expense['memo']}"
                 )
             self._display_total(expenses)
-        else:
-            print("There are no expenses.")
 
     def add_expense(self, args: list):
         """
