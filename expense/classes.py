@@ -110,6 +110,54 @@ class ExpenseData:
 
         self.db_connection.execute_query(query, amount, memo, created_on)
 
+    def delete_expenses(self, expense_ids: list):
+        """
+        Deletes the expenses associated with the given expense ids
+        :param expense_ids (list<str>): the ids of the expense to delete
+        """
+        if not expense_ids or not expense_ids[0].isnumeric():
+            print("You must provide at least 1 expense id. Exiting.")
+            sys.exit(1)
+
+        deleted_expenses = []
+        invalid_ids = []
+
+        for expense_id in expense_ids:
+            query = dedent("""
+                SELECT * FROM expenses WHERE id = (%s)
+            """)
+            expense = self.db_connection.execute_query(query, expense_id)
+            if expense:
+                query = dedent("""
+                    DELETE FROM expenses WHERE id = (%s)
+                """)
+                self.db_connection.execute_query(query, expense_id)
+                deleted_expenses.append(expense)
+            else:
+                invalid_ids.append(expense_id)
+
+        if deleted_expenses:
+            print("The following expense(s) have been deleted:")
+            for expense in deleted_expenses:
+                ExpenseData.display_expenses(expense)
+            print()
+        if invalid_ids:
+            print(f"No expense(s) found with id(s): {', '.join(invalid_ids)}.")
+            print()
+
+    def delete_all_expenses(self):
+        """
+        Clears the expenses table after confirmation from the user
+        """
+        if (input(
+            "This will remove all expenses. Are you sure? (enter y to confirm)"
+        ).strip()).lower() == "y":
+            query = dedent("""
+                DELETE FROM expenses
+            """)
+            self.db_connection.execute_query(query)
+            print("All expenses have been deleted.")
+
     def list_expenses(self):
         """
         Prints all expenses in a '|' delimited table
@@ -138,41 +186,6 @@ class ExpenseData:
         expenses = self.db_connection.execute_query(query, f"%{search_term}%")
         if expenses:
             ExpenseData.display_expenses(expenses)
-
-    def delete_expenses(self, expense_ids: list):
-        """
-        Deletes the expenses associated with the given expense ids
-        :param expense_ids (list<str>): the ids of the expense to delete
-        """
-        if not expense_ids or not expense_ids[0].isnumeric():
-            print("You must provide at least 1 expense id. Exiting.")
-            sys.exit(1)
-
-        deleted_expenses = []
-        invalid_ids = []
-
-        for id in expense_ids:
-            query = dedent("""
-                SELECT * FROM expenses WHERE id = (%s)
-            """)
-            expense = self.db_connection.execute_query(query, id)
-            if expense:
-                query = dedent("""
-                    DELETE FROM expenses WHERE id = (%s)
-                """)
-                self.db_connection.execute_query(query, id)
-                deleted_expenses.append(expense)
-            else:
-                invalid_ids.append(id)
-
-        if deleted_expenses:
-            print("The following expense(s) have been deleted:")
-            for expense in deleted_expenses:
-                ExpenseData.display_expenses(expense)
-            print()
-        if invalid_ids:
-            print(f"No expense(s) found with id(s): {', '.join(invalid_ids)}.")
-            print()
 
 
 class CLI:
@@ -210,11 +223,14 @@ class CLI:
             match cmd.lower():
                 case "add":
                     self.expense_data.add_expense(args)
+                case "clear":
+                    self.expense_data.delete_all_expenses()
+                case "delete":
+                    self.expense_data.delete_expenses(args)
                 case "list":
                     self.expense_data.list_expenses()
                 case "search":
                     self.expense_data.search_expenses(' '.join(args))
-                case "delete":
-                    self.expense_data.delete_expenses(args)
+
         else:
             self.display_help()
