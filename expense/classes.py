@@ -74,16 +74,40 @@ class ExpenseData:
     def __init__(self, dbname):
         self.db_connection = DbConnection(dbname)
 
-    @staticmethod
-    def display_expenses(expenses):
+    def _display_count(self, count):
+        """
+        Prints the count of rows returned from the associated db query
+        :param count int: number of returned rows from the associated db query
+        """
+        print(f"There {'is' if count == 1 else 'are'} {count} "
+              f"expense{'' if count == 1 else 's'}.")
+
+    def _display_total(self, expenses):
+        """
+        Displays the total price of all expenses returned
+        :param count int: number of returned rows from the associated db query
+        """
+        total = round(sum(expense['amount'] for expense in expenses), 2)
+        if len(expenses) > 1:
+            print("-" * 50)
+            print(f"Total {total:>25}")
+
+    def display_expenses(self, expenses):
         """
         Prints all returned rows with columns delimited by '|'
+        :param expenses list<str>: returned rows from the assoiciated db query
         """
-        for expense in expenses:
-            print(
-                f"  {expense['id']} | {expense['created_on']} | "
-                f"{expense['amount']:>12} | {expense['memo']}"
-            )
+        self._display_count(len(expenses))
+
+        if expenses:
+            for expense in expenses:
+                print(
+                    f"  {expense['id']} | {expense['created_on']} | "
+                    f"{expense['amount']:>12} | {expense['memo']}"
+                )
+            self._display_total(expenses)
+        else:
+            print("There are no expenses.")
 
     def add_expense(self, args: list):
         """
@@ -139,7 +163,7 @@ class ExpenseData:
         if deleted_expenses:
             print("The following expense(s) have been deleted:")
             for expense in deleted_expenses:
-                ExpenseData.display_expenses(expense)
+                self.display_expenses(expense)
             print()
         if invalid_ids:
             print(f"No expense(s) found with id(s): {', '.join(invalid_ids)}.")
@@ -167,8 +191,7 @@ class ExpenseData:
         """)
 
         expenses = self.db_connection.execute_query(query)
-        if expenses:
-            ExpenseData.display_expenses(expenses)
+        self.display_expenses(expenses)
 
     def search_expenses(self, search_term: str):
         """
@@ -184,8 +207,7 @@ class ExpenseData:
         """)
 
         expenses = self.db_connection.execute_query(query, f"%{search_term}%")
-        if expenses:
-            ExpenseData.display_expenses(expenses)
+        self.display_expenses(expenses)
 
 
 class CLI:
