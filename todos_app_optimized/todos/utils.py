@@ -21,12 +21,6 @@ def error_for_todo(title: str) -> str | None:
     return error
 
 
-def find_todo_list_by_id(todo_lst_id: str, todo_lists: list) -> dict | None:
-    return next(
-        (lst for lst in todo_lists if lst['id'] == todo_lst_id), None
-    )
-
-
 def find_todo_by_id(todo_id: str, todo_list: list) -> dict | None:
     return next(
         (todo for todo in todo_list["todos"] if todo["id"] == todo_id), None

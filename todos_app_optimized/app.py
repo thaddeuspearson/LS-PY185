@@ -1,19 +1,11 @@
-from todos.utils import (
-    delete_todo_by_id,
-    delete_todo_list_by_id,
-    error_for_list_title,
-    error_for_todo,
-    find_todo_by_id,
-    find_todo_list_by_id,
-    is_list_completed,
-    is_todo_completed,
-    mark_all_todos_completed,
-    sort_items,
-    todos_remaining,
-)
+import os
+from functools import wraps
+from secrets import token_hex
+from uuid import uuid4
 from flask import (
     flash,
     Flask,
+    g,
     redirect,
     render_template,
     request,
@@ -21,11 +13,19 @@ from flask import (
     url_for,
 )
 from werkzeug.exceptions import NotFound
-from secrets import token_hex
-from uuid import uuid4
-from functools import wraps
-import os
-
+from todos.utils import (
+    delete_todo_by_id,
+    delete_todo_list_by_id,
+    error_for_list_title,
+    error_for_todo,
+    find_todo_by_id,
+    is_list_completed,
+    is_todo_completed,
+    mark_all_todos_completed,
+    sort_items,
+    todos_remaining,
+)
+from todos.session_persistence import SessionPersistence
 
 app = Flask(__name__)
 app.secret_key = token_hex(32)
@@ -35,7 +35,7 @@ def require_list(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         list_id = kwargs.get("list_id")
-        lst = find_todo_list_by_id(list_id, session["lists"])
+        lst = g.storage.find_list(list_id)
 
         if not lst:
             raise NotFound(description="List not Found")
@@ -58,15 +58,14 @@ def require_todo(f):
 
 @app.context_processor
 def list_utilities_processor():
-    return dict(
-        is_list_completed=is_list_completed,
-    )
+    return {
+        "is_list_completed": is_list_completed,
+    }
 
 
 @app.before_request
-def initialize_session():
-    if "lists" not in session:
-        session["lists"] = []
+def load_storage():
+    g.storage = SessionPersistence(session)
 
 
 @app.route("/")
