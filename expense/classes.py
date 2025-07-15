@@ -101,8 +101,10 @@ class ExpenseData:
         Prints the count of rows returned from the associated db query
         :param count int: number of returned rows from the associated db query
         """
-        print(f"There {'is' if count == 1 else 'are'} {count if count else 'no'} "
-              f"expense{'' if count == 1 else 's'}.")
+        print(
+            f"There {'is' if count == 1 else 'are'} {count if count else 'no'}"
+            f" expense{'s' if count != 1 else ''}."
+        )
 
     def _display_total(self, expenses):
         """
