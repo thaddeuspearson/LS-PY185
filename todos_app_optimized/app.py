@@ -21,13 +21,14 @@ from flask import (
     url_for,
 )
 from werkzeug.exceptions import NotFound
+from secrets import token_hex
 from uuid import uuid4
 from functools import wraps
 import os
 
 
 app = Flask(__name__)
-app.secret_key = "th1515@b@ds3cr3t"
+app.secret_key = token_hex(32)
 
 
 def require_list(f):
