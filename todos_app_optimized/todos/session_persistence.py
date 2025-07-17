@@ -27,6 +27,13 @@ class SessionPersistence:
             lst["title"] = title
         self.session.modified = True
 
+    def delete_list(self, list_id):
+        self.session["lists"] = [
+            lst for lst in self.session["lists"]
+            if lst.id != list_id
+        ]
+        self.session.modified = True
+
     def find_list(self, todo_lst_id: str) -> dict | None:
         """finds and returns the list associated with the given id or None"""
         return next(
