@@ -80,9 +80,8 @@ def add_todo_list():
 
 @app.route("/lists", methods=["GET"])
 def get_lists():
-    return render_template('lists.html',
-                           lists=sort_items(session["lists"],
-                                            is_list_completed),
+    lists = sort_items(g.storage.all_lists(), is_list_completed)
+    return render_template('lists.html', lists=lists,
                            todos_remaining=todos_remaining)
 
 
