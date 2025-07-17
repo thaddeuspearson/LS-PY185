@@ -1,4 +1,5 @@
 """Custom Classes for the Todo App"""
+from uuid import uuid4
 
 
 class SessionPersistence:
@@ -11,6 +12,14 @@ class SessionPersistence:
     def all_lists(self):
         """Gets all lists iin the ciurrent session"""
         return self.session['lists']
+
+    def create_list(self, title):
+        self.all_lists().append({
+            "id": str(uuid4()),
+            "title": title,
+            "todos": []
+        })
+        self.session.modified = True
 
     def find_list(self, todo_lst_id: str) -> dict | None:
         """finds and returns the list associated with the given id or None"""
