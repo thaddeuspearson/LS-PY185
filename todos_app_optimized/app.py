@@ -107,7 +107,6 @@ def update_list(lst, list_id):
         flash(error, "error")
         return render_template("/edit_list.html", lst=lst, title=title)
     lst["title"] = title
-
     flash('The list title has been updated', "success")
     return redirect(url_for("display_list", list_id=list_id))
 
