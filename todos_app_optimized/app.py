@@ -93,7 +93,7 @@ def create_list():
         flash(error, "error")
         return render_template("/new_list.html", title=title)
 
-    g.create_list(title)
+    g.storage.create_list(title)
     flash("The list has been created.", "success")
     return redirect(url_for("get_lists"))
 
@@ -102,11 +102,10 @@ def create_list():
 @require_list
 def update_list(lst, list_id):
     title = request.form["list_title"].strip()
-    error = error_for_list_title(title, session["lists"])
+    error = error_for_list_title(title, g.storage.all_lists())
     if error:
         flash(error, "error")
         return render_template("/edit_list.html", lst=lst, title=title)
-
     lst["title"] = title
 
     flash('The list title has been updated', "success")
