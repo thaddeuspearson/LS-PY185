@@ -30,7 +30,7 @@ class SessionPersistence:
     def delete_list(self, list_id):
         self.session["lists"] = [
             lst for lst in self.session["lists"]
-            if lst.id != list_id
+            if lst["id"] != list_id
         ]
         self.session.modified = True
 
