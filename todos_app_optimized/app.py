@@ -15,7 +15,6 @@ from flask import (
 from werkzeug.exceptions import NotFound
 from todos.utils import (
     delete_todo_by_id,
-    delete_todo_list_by_id,
     error_for_list_title,
     error_for_todo,
     find_todo_by_id,
@@ -115,10 +114,8 @@ def update_list(lst, list_id):
 @require_list
 def delete_list(lst, list_id):
     title = lst["title"]
-    session["lists"] = delete_todo_list_by_id(list_id, session["lists"])
-
+    g.storage.delete_list(list_id)
     flash(f"The list: '{title}' has been deleted", "success")
-    session.modified = True
     return redirect(url_for("get_lists"))
 
 
