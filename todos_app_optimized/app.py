@@ -13,7 +13,6 @@ from flask import (
 )
 from werkzeug.exceptions import NotFound
 from todos.utils import (
-    delete_todo_by_id,
     error_for_list_title,
     error_for_todo,
     find_todo_by_id,
@@ -156,9 +155,7 @@ def toggle_todo_complete(lst, todo, list_id, todo_id):
 @app.route("/lists/<list_id>/todos/<todo_id>/delete", methods=["POST"])
 @require_todo
 def delete_todo(lst, todo, list_id, todo_id):
-    delete_todo_by_id(todo_id, lst)
-
-    session.modified = True
+    g.storage.delete_todo(lst, todo_id)
     flash("The todo has been deleted.", "success")
     return redirect(url_for("display_list", list_id=list_id))
 
