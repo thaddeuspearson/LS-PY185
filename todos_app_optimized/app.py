@@ -1,7 +1,6 @@
 import os
 from functools import wraps
 from secrets import token_hex
-from uuid import uuid4
 from flask import (
     flash,
     Flask,
@@ -91,7 +90,6 @@ def create_list():
     if error:
         flash(error, "error")
         return render_template("/new_list.html", title=title)
-
     g.storage.create_list(title)
     flash("The list has been created.", "success")
     return redirect(url_for("get_lists"))
@@ -124,18 +122,10 @@ def delete_list(lst, list_id):
 def create_todo(lst, list_id):
     todo_title = request.form["todo"].strip()
     error = error_for_todo(todo_title)
-
     if error:
         flash(error, "error")
         return render_template("/list.html", lst=lst)
-
-    lst["todos"].append({
-        "id": str(uuid4()),
-        "title": todo_title,
-        "completed": False
-    })
-
-    session.modified = True
+    g.storage.create_todo(lst, todo_title)
     flash("The todo has been created.", "success")
     return redirect(url_for("display_list", list_id=list_id))
 
