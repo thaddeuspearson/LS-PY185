@@ -116,19 +116,6 @@ def delete_list(lst, list_id):
     return redirect(url_for("get_lists"))
 
 
-@app.route("/lists/<list_id>/todos", methods=["POST"])
-@require_list
-def create_todo(lst, list_id):
-    todo_title = request.form["todo"].strip()
-    error = error_for_todo(todo_title)
-    if error:
-        flash(error, "error")
-        return render_template("/list.html", lst=lst)
-    g.storage.create_todo(lst, todo_title)
-    flash("The todo has been created.", "success")
-    return redirect(url_for("display_list", list_id=list_id))
-
-
 @app.route("/lists/<list_id>", methods=["GET"])
 @require_list
 def display_list(lst, list_id):
@@ -142,12 +129,24 @@ def edit_list(lst, list_id):
     return render_template("edit_list.html", lst=lst)
 
 
+@app.route("/lists/<list_id>/todos", methods=["POST"])
+@require_list
+def create_todo(lst, list_id):
+    todo_title = request.form["todo"].strip()
+    error = error_for_todo(todo_title)
+    if error:
+        flash(error, "error")
+        return render_template("/list.html", lst=lst)
+    g.storage.create_todo(lst, todo_title)
+    flash("The todo has been created.", "success")
+    return redirect(url_for("display_list", list_id=list_id))
+
+
 @app.route("/lists/<list_id>/todos/<todo_id>/toggle", methods=["POST"])
 @require_todo
-def toggle_todo_complete(lst, todo, list_id, todo_id):
-    todo["completed"] = request.form["completed"] == "True"
-
-    session.modified = True
+def update_todo_status(lst, todo, list_id, todo_id):
+    is_completed = request.form["completed"] == "True"
+    g.storage.update_todo_status(todo, is_completed)
     flash("The todo has been updated.", "success")
     return redirect(url_for("display_list", list_id=list_id))
 

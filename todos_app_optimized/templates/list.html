@@ -22,7 +22,7 @@
       {% for todo in lst.todos %}
         <li class="{{'complete' if todo.completed else ''}}">
           <form class="check"
-                action="{{ url_for('toggle_todo_complete', list_id=lst.id, todo_id=todo.id) }}"
+                action="{{ url_for('update_todo_status', list_id=lst.id, todo_id=todo.id) }}"
                 method="post" >
             <input type="hidden" name="completed"
                   value="{{ not todo.completed }}" />
