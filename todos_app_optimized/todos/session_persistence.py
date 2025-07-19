@@ -14,6 +14,7 @@ class SessionPersistence:
         return self.session['lists']
 
     def create_list(self, title):
+        """Creates a new todo list"""
         self.all_lists().append({
             "id": str(uuid4()),
             "title": title,
@@ -22,12 +23,14 @@ class SessionPersistence:
         self.session.modified = True
 
     def update_list(self, list_id, title):
+        """Updates the given todo list"""
         lst = self.find_list(list_id)
         if lst:
             lst["title"] = title
         self.session.modified = True
 
     def delete_list(self, list_id):
+        """Deletes the given todo list"""
         self.session["lists"] = [
             lst for lst in self.session["lists"]
             if lst["id"] != list_id
@@ -59,10 +62,12 @@ class SessionPersistence:
         self.session.modified = True
 
     def update_todo_status(self, todo, is_completed):
+        """Sets the given todo's completed status to True"""
         todo["completed"] = is_completed
         self.session.modified = True
 
     def mark_all_todos_completed(self, todo_list):
+        """Sets all todos completed status to True"""
         for todo in todo_list["todos"]:
             todo["completed"] = True
         self.session.modified = True
