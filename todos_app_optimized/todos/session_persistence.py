@@ -34,6 +34,13 @@ class SessionPersistence:
         ]
         self.session.modified = True
 
+    def find_list(self, todo_lst_id: str) -> dict | None:
+        """finds and returns the list associated with the given id or None"""
+        return next(
+            (lst for lst in self.session['lists'] if lst['id'] == todo_lst_id),
+            None
+        )
+
     def create_todo(self, todo_list, todo_title):
         """Creates a todo in the given todo_list"""
         todo_list["todos"].append({
@@ -55,9 +62,7 @@ class SessionPersistence:
         todo["completed"] = is_completed
         self.session.modified = True
 
-    def find_list(self, todo_lst_id: str) -> dict | None:
-        """finds and returns the list associated with the given id or None"""
-        return next(
-            (lst for lst in self.session['lists'] if lst['id'] == todo_lst_id),
-            None
-        )
+    def mark_all_todos_completed(self, todo_list):
+        for todo in todo_list["todos"]:
+            todo["completed"] = True
+        self.session.modified = True

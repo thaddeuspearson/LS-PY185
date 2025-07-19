@@ -18,7 +18,6 @@ from todos.utils import (
     find_todo_by_id,
     is_list_completed,
     is_todo_completed,
-    mark_all_todos_completed,
     sort_items,
     todos_remaining,
 )
@@ -162,9 +161,7 @@ def delete_todo(lst, todo, list_id, todo_id):
 @app.route("/lists/<list_id>/complete_all", methods=["POST"])
 @require_list
 def complete_all_todos(lst, list_id):
-    mark_all_todos_completed(lst)
-
-    session.modified = True
+    g.storage.mark_all_todos_completed(lst)
     flash("The todos have been updated.", "success")
     return redirect(url_for("display_list", list_id=list_id))
 

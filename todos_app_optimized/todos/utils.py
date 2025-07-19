@@ -27,11 +27,6 @@ def find_todo_by_id(todo_id: str, todo_list: list) -> dict | None:
     )
 
 
-def mark_all_todos_completed(todo_lst: list) -> None:
-    for todo in todo_lst["todos"]:
-        todo["completed"] = not todo["completed"]
-
-
 def todos_remaining(todo_lst: dict) -> int:
     return sum(1 for todo in todo_lst["todos"] if not todo["completed"])
 
