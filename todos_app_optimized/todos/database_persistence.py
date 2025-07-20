@@ -13,14 +13,14 @@ class DatabasePersistence:
 
     def __init__(self) -> None:
         """Initiates the DatabasePersistence class"""
-        pass
+        self.dbname = DatabasePersistence.DBNAME
 
     @contextmanager
     def _database_connect(self) -> Generator[PGConnection, None, None]:
         """Obtains a connection to the indicated PostgreSQL database"""
         connection = None
         try:
-            connection = connection = connect(dbname=DatabasePersistence.DBNAME)
+            connection = connection = connect(dbname=self.dbname)
             connection.autocommit = True
             with connection:
                 yield connection

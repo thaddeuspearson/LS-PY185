@@ -8,7 +8,6 @@ from flask import (
     redirect,
     render_template,
     request,
-    session,
     url_for,
 )
 from werkzeug.exceptions import NotFound
@@ -61,7 +60,7 @@ def list_utilities_processor():
 
 @app.before_request
 def load_data():
-    g.storage = DatabasePersistence(session)
+    g.storage = DatabasePersistence()
 
 
 @app.route("/")
