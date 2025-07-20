@@ -14,3 +14,7 @@ CREATE TABLE todos (
     is_completed boolean NOT NULL DEFAULT false,
     list_id integer NOT NULL REFERENCES lists (id) ON DELETE CASCADE
 );
+
+-- Testing Dummy Data
+INSERT INTO lists (title) VALUES ('Homework');
+INSERT INTO lists (title) VALUES ('Groceries');
