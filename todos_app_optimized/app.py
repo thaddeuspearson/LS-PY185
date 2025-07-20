@@ -21,7 +21,7 @@ from todos.utils import (
     sort_items,
     todos_remaining,
 )
-from todos.session_persistence import SessionPersistence
+from todos.database_persistence import DatabasePersistence
 
 app = Flask(__name__)
 app.secret_key = token_hex(32)
@@ -60,8 +60,8 @@ def list_utilities_processor():
 
 
 @app.before_request
-def load_storage():
-    g.storage = SessionPersistence(session)
+def load_data():
+    g.storage = DatabasePersistence(session)
 
 
 @app.route("/")
@@ -93,7 +93,7 @@ def create_list():
     return redirect(url_for("get_lists"))
 
 
-@app.route("/lists/<list_id>", methods=["POST"])
+@app.route("/lists/<int:list_id>", methods=["POST"])
 @require_list
 def update_list(lst, list_id):
     title = request.form["list_title"].strip()
@@ -106,7 +106,7 @@ def update_list(lst, list_id):
     return redirect(url_for("display_list", list_id=list_id))
 
 
-@app.route("/lists/<list_id>/delete", methods=["POST"])
+@app.route("/lists/<int:list_id>/delete", methods=["POST"])
 @require_list
 def delete_list(lst, list_id):
     title = lst["title"]
@@ -115,20 +115,20 @@ def delete_list(lst, list_id):
     return redirect(url_for("get_lists"))
 
 
-@app.route("/lists/<list_id>", methods=["GET"])
+@app.route("/lists/<int:list_id>", methods=["GET"])
 @require_list
 def display_list(lst, list_id):
     lst["todos"] = sort_items(lst["todos"], is_todo_completed)
     return render_template("list.html", lst=lst)
 
 
-@app.route("/lists/<list_id>/edit", methods=["GET"])
+@app.route("/lists/<int:list_id>/edit", methods=["GET"])
 @require_list
 def edit_list(lst, list_id):
     return render_template("edit_list.html", lst=lst)
 
 
-@app.route("/lists/<list_id>/todos", methods=["POST"])
+@app.route("/lists/<int:list_id>/todos", methods=["POST"])
 @require_list
 def create_todo(lst, list_id):
     todo_title = request.form["todo"].strip()
@@ -141,7 +141,7 @@ def create_todo(lst, list_id):
     return redirect(url_for("display_list", list_id=list_id))
 
 
-@app.route("/lists/<list_id>/todos/<todo_id>/toggle", methods=["POST"])
+@app.route("/lists/<int:list_id>/todos/<int:todo_id>/toggle", methods=["POST"])
 @require_todo
 def update_todo_status(lst, todo, list_id, todo_id):
     is_completed = request.form["completed"] == "True"
@@ -150,7 +150,7 @@ def update_todo_status(lst, todo, list_id, todo_id):
     return redirect(url_for("display_list", list_id=list_id))
 
 
-@app.route("/lists/<list_id>/todos/<todo_id>/delete", methods=["POST"])
+@app.route("/lists/<int:list_id>/todos/<int:todo_id>/delete", methods=["POST"])
 @require_todo
 def delete_todo(lst, todo, list_id, todo_id):
     g.storage.delete_todo(lst, todo_id)
@@ -158,7 +158,7 @@ def delete_todo(lst, todo, list_id, todo_id):
     return redirect(url_for("display_list", list_id=list_id))
 
 
-@app.route("/lists/<list_id>/complete_all", methods=["POST"])
+@app.route("/lists/<int:list_id>/complete_all", methods=["POST"])
 @require_list
 def complete_all_todos(lst, list_id):
     g.storage.mark_all_todos_completed(lst)

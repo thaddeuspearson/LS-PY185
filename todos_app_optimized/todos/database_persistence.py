@@ -1,10 +1,35 @@
 """Custom DatabasePersistence class for the Todo App"""
+import sys
+from contextlib import contextmanager
+from typing import Generator
+from psycopg2 import connect, OperationalError
+from psycopg2.extras import DictCursor
+from psycopg2.extensions import connection as PGConnection
 
 
 class DatabasePersistence:
     """Handles database persistence for todo app"""
+    DBNAME = "todos"
+
     def __init__(self) -> None:
+        """Initiates the DatabasePersistence class"""
         pass
+
+    @contextmanager
+    def _database_connect(self) -> Generator[PGConnection, None, None]:
+        """Obtains a connection to the indicated PostgreSQL database"""
+        connection = None
+        try:
+            connection = connection = connect(dbname=DatabasePersistence.DBNAME)
+            connection.autocommit = True
+            with connection:
+                yield connection
+        except OperationalError:
+            print(f"Unable to get a connection to: {self.dbname}. Exiting.")
+            sys.exit(1)
+        finally:
+            if connection:
+                connection.close()
 
     def all_lists(self) -> list:
         """Gets all lists iin the current session"""
