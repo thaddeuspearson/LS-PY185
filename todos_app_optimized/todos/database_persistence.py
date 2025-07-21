@@ -21,6 +21,7 @@ class DatabasePersistence:
     def __init__(self) -> None:
         """Initiates the DatabasePersistence class."""
         self.dbname = DatabasePersistence.DBNAME
+        self._setup_schema()
 
     @contextmanager
     def _database_connect(self) -> Generator[PGConnection, None, None]:
@@ -49,6 +50,33 @@ class DatabasePersistence:
         except InterfaceError as e:
             logger.exception(e)
             sys.exit(1)
+
+    def _setup_schema(self):
+        """Creates the database schema if the tables do not exist"""
+
+        query = dedent("""
+            CREATE TABLE IF NOT EXISTS lists (
+                id serial PRIMARY KEY,
+                title text NOT NULL UNIQUE
+            );
+
+            CREATE TABLE IF NOT EXISTS todos (
+                id serial PRIMARY KEY,
+                title text NOT NULL,
+                completed boolean NOT NULL DEFAULT false,
+                list_id integer NOT NULL
+                    REFERENCES lists (id)
+                    ON DELETE CASCADE
+            );
+        """)
+
+        logger.info("Executing query: %s", query)
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query)
+        except DatabaseError as e:
+            logger.exception(e)
 
     def all_lists(self) -> list[dict]:
         """Gets all lists in the current session."""
