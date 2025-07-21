@@ -65,6 +65,7 @@ class DatabasePersistence:
                 results = cursor.fetchall()
         except DatabaseError as e:
             print(e)
+
         lists = [dict(row) for row in results]
 
         for lst in lists:
@@ -75,7 +76,17 @@ class DatabasePersistence:
 
     def create_list(self, title: str) -> None:
         """Creates a new todo list"""
-        pass
+        query = dedent("""
+            INSERT INTO lists (title) VALUES (%s)
+        """)
+
+        logger.info("Executing query: %s with title: %s", query, title)
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query, (title,))
+        except DatabaseError as e:
+            print(e)
 
     def update_list(self, list_id: int, title: str) -> None:
         """Updates the given todo list"""
