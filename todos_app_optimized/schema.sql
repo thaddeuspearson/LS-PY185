@@ -18,3 +18,5 @@ CREATE TABLE todos (
 -- Testing Dummy Data
 INSERT INTO lists (title) VALUES ('Homework');
 INSERT INTO lists (title) VALUES ('Groceries');
+INSERT INTO todos (title, list_id) VALUES ('Math', 1);
+INSERT INTO todos (title, list_id) VALUES ('Science', 1);
