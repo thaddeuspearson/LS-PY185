@@ -212,7 +212,7 @@ class DatabasePersistence:
         except DatabaseError as e:
             logger.exception(e)
 
-    def delete_todo(self, todo_id: int, todo_list_id: list) -> None:
+    def delete_todo(self, todo_id: int, todo_list_id: int) -> None:
         """Deletes the todo with the given todo_id from the given todo_list."""
 
         query = dedent("""
