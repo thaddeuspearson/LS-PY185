@@ -169,7 +169,7 @@ class DatabasePersistence:
         todos = [dict(todo) for todo in todos]
         return todos
 
-    def find_list(self, todo_list_id: str) -> dict | None:
+    def find_list(self, todo_list_id: int) -> dict | None:
         """Finds and returns the list associated with the given id or None."""
 
         query = dedent("""
