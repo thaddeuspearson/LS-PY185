@@ -211,11 +211,9 @@ class DatabasePersistence:
                 WHERE id = %s AND list_id = %s
         """)
 
-        logger.info(
-            "Executing query: %s with todo_id: %s "
-            "and todo_list_id: %s and is_completed = %s",
-            query, is_completed, todo_id, todo_list_id
-        )
+        logger.info("Executing query: %s with todo_id: %s "
+                    "and todo_list_id: %s and is_completed = %s",
+                    query, is_completed, todo_id, todo_list_id)
 
         try:
             with self._database_cursor() as cursor:
@@ -223,6 +221,18 @@ class DatabasePersistence:
         except DatabaseError as e:
             logger.exception(e)
 
-    def mark_all_todos_completed(self, todo_list: dict) -> None:
+    def mark_all_todos_completed(self, todo_list_id: dict) -> None:
         """Sets all todos completed status to True."""
-        pass
+
+        query = dedent("""
+            UPDATE todos SET completed = True WHERE list_id = %s
+        """)
+
+        logger.info("Executing query: %s with todo_list_id: %s",
+                    query, todo_list_id)
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query, (todo_list_id,))
+        except DatabaseError as e:
+            logger.exception(e)
