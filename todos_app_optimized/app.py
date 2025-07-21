@@ -160,7 +160,7 @@ def delete_todo(lst, todo, list_id, todo_id):
 @app.route("/lists/<int:list_id>/complete_all", methods=["POST"])
 @require_list
 def complete_all_todos(lst, list_id):
-    g.storage.mark_all_todos_completed()
+    g.storage.mark_all_todos_completed(list_id)
     flash("The todos have been updated.", "success")
     return redirect(url_for("display_list", list_id=list_id))
 

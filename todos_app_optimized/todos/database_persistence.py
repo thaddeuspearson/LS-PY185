@@ -249,7 +249,7 @@ class DatabasePersistence:
         except DatabaseError as e:
             logger.exception(e)
 
-    def mark_all_todos_completed(self, todo_list_id: dict) -> None:
+    def mark_all_todos_completed(self, todo_list_id: int) -> None:
         """Sets all todos completed status to True."""
 
         query = dedent("""
