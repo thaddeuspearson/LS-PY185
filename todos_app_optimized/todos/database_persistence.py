@@ -88,9 +88,22 @@ class DatabasePersistence:
         except DatabaseError as e:
             print(e)
 
-    def update_list(self, list_id: int, title: str) -> None:
+    def update_list(self, list_id: int, new_title: str) -> None:
         """Updates the given todo list"""
-        pass
+        query = dedent("""
+            UPDATE lists SET title = %s WHERE id = %s
+        """)
+
+        logger.info(
+            "Executing query: %s with new title: %s and id: %s",
+            query, new_title, list_id
+        )
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query, (new_title, list_id))
+        except DatabaseError as e:
+            print(e)
 
     def delete_list(self, list_id: int) -> None:
         """Deletes the given todo list"""
