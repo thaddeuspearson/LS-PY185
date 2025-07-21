@@ -107,7 +107,16 @@ class DatabasePersistence:
 
     def delete_list(self, list_id: int) -> None:
         """Deletes the given todo list"""
-        pass
+        query = dedent("""
+            DELETE from lists WHERE id = %s
+        """)
+        logger.info("Executing query: %s with id: %s", query, list_id)
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query, (list_id,))
+        except DatabaseError as e:
+            print(e)
 
     def _find_todos_for_list(self, todo_list_id: int) -> list:
         """Finds all todos associated with the given todo_list_id"""
