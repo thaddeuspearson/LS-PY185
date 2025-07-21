@@ -40,9 +40,7 @@ class DatabasePersistence:
 
     @contextmanager
     def _database_cursor(self):
-        """
-        Creates a cursor context manager for the given database
-        """
+        """Creates a cursor context manager for the given database"""
         try:
             with self._database_connect() as connection:
                 with connection.cursor(cursor_factory=DictCursor) as cursor:
@@ -53,11 +51,15 @@ class DatabasePersistence:
 
     def all_lists(self) -> list:
         """Gets all lists in the current session"""
+
         query = dedent("""
             SELECT * FROM lists
         """)
 
-        logger.info("Executing query: %s", query)
+        logger.info(
+            "Executing query: %s",
+            query
+        )
 
         try:
             with self._database_cursor() as cursor:
@@ -76,11 +78,15 @@ class DatabasePersistence:
 
     def create_list(self, title: str) -> None:
         """Creates a new todo list"""
+
         query = dedent("""
             INSERT INTO lists (title) VALUES (%s)
         """)
 
-        logger.info("Executing query: %s with title: %s", query, title)
+        logger.info(
+            "Executing query: %s with title: %s",
+            query, title
+        )
 
         try:
             with self._database_cursor() as cursor:
@@ -90,6 +96,7 @@ class DatabasePersistence:
 
     def update_list(self, list_id: int, new_title: str) -> None:
         """Updates the given todo list"""
+
         query = dedent("""
             UPDATE lists SET title = %s WHERE id = %s
         """)
@@ -107,10 +114,15 @@ class DatabasePersistence:
 
     def delete_list(self, list_id: int) -> None:
         """Deletes the given todo list"""
+
         query = dedent("""
             DELETE from lists WHERE id = %s
         """)
-        logger.info("Executing query: %s with id: %s", query, list_id)
+
+        logger.info(
+            "Executing query: %s with id: %s",
+            query, list_id
+        )
 
         try:
             with self._database_cursor() as cursor:
@@ -120,11 +132,15 @@ class DatabasePersistence:
 
     def _find_todos_for_list(self, todo_list_id: int) -> list:
         """Finds all todos associated with the given todo_list_id"""
+
         query = dedent("""
             SELECT * FROM todos WHERE list_id = %s
         """)
 
-        logger.info("Executing query: %s with list_id %s", query, todo_list_id)
+        logger.info(
+            "Executing query: %s with list_id %s",
+            query, todo_list_id
+        )
 
         try:
             with self._database_cursor() as cursor:
@@ -138,12 +154,16 @@ class DatabasePersistence:
 
     def find_list(self, todo_list_id: str) -> dict | None:
         """finds and returns the list associated with the given id or None"""
+
         query = dedent("""
             SELECT * FROM lists WHERE id = %s
         """)
+
         logger.info(
-            "Executing query: %s with todo_list_id: %s", query, todo_list_id
+            "Executing query: %s with todo_list_id: %s",
+            query, todo_list_id
         )
+
         try:
             with self._database_cursor() as cursor:
                 cursor.execute(query, (todo_list_id,))
@@ -155,9 +175,23 @@ class DatabasePersistence:
         lst.setdefault('todos', todos)
         return lst
 
-    def create_todo(self, todo_list: dict, todo_title: str) -> None:
+    def create_todo(self, todo_title: str, todo_list_id: int) -> None:
         """Creates a todo in the given todo_list"""
-        pass
+
+        query = dedent("""
+            INSERT INTO todos (title, list_id) VALUES (%s, %s)
+        """)
+
+        logger.info(
+            "Executing query: %s with todo_title: %s and todo_list_id: %s",
+            query, todo_title, todo_list_id,
+        )
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query, (todo_title, todo_list_id))
+        except DatabaseError as e:
+            print(e)
 
     def delete_todo(self, todo_list: list, todo_id: int) -> None:
         """Deletes the todo with the given todo_id from the given todo_list"""

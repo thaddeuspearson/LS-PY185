@@ -135,7 +135,7 @@ def create_todo(lst, list_id):
     if error:
         flash(error, "error")
         return render_template("/list.html", lst=lst)
-    g.storage.create_todo(lst, todo_title)
+    g.storage.create_todo(todo_title, list_id,)
     flash("The todo has been created.", "success")
     return redirect(url_for("display_list", list_id=list_id))
 
