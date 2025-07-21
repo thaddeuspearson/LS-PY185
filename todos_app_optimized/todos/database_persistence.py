@@ -56,18 +56,20 @@ class DatabasePersistence:
         query = dedent("""
             SELECT * FROM lists
         """)
+
         logger.info("Executing query: %s", query)
+
         try:
             with self._database_cursor() as cursor:
                 cursor.execute(query)
                 results = cursor.fetchall()
         except DatabaseError as e:
             print(e)
-
         lists = [dict(row) for row in results]
 
         for lst in lists:
-            lst.setdefault('todos', [])
+            todos = self._find_todos_for_list(lst['id'])
+            lst.setdefault('todos', todos)
 
         return lists
 
@@ -82,6 +84,24 @@ class DatabasePersistence:
     def delete_list(self, list_id: int) -> None:
         """Deletes the given todo list"""
         pass
+
+    def _find_todos_for_list(self, todo_list_id: int) -> list:
+        """Finds all todos associated with the given todo_list_id"""
+        query = dedent("""
+            SELECT * FROM todos WHERE list_id = %s
+        """)
+
+        logger.info("Executing query: %s with list_id %s", query, todo_list_id)
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query, (todo_list_id,))
+                todos = cursor.fetchall()
+        except DatabaseError as e:
+            print(e)
+
+        todos = [dict(todo) for todo in todos]
+        return todos
 
     def find_list(self, todo_list_id: str) -> dict | None:
         """finds and returns the list associated with the given id or None"""
@@ -98,7 +118,8 @@ class DatabasePersistence:
         except DatabaseError as e:
             print(e)
 
-        lst.setdefault('todos', [])
+        todos = self._find_todos_for_list(todo_list_id)
+        lst.setdefault('todos', todos)
         return lst
 
     def create_todo(self, todo_list: dict, todo_title: str) -> None:
