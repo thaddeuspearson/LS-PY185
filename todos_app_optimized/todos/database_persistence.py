@@ -202,9 +202,26 @@ class DatabasePersistence:
         except DatabaseError as e:
             logger.exception(e)
 
-    def update_todo_status(self, todo: dict, is_completed: bool) -> None:
+    def update_todo_status(self, todo_id: int, todo_list_id: int,
+                           is_completed: bool) -> None:
         """Sets the given todo's completed status to True."""
-        pass
+
+        query = dedent("""
+                UPDATE todos SET completed = %s
+                WHERE id = %s AND list_id = %s
+        """)
+
+        logger.info(
+            "Executing query: %s with todo_id: %s "
+            "and todo_list_id: %s and is_completed = %s",
+            query, is_completed, todo_id, todo_list_id
+        )
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query, (is_completed, todo_id, todo_list_id))
+        except DatabaseError as e:
+            logger.exception(e)
 
     def mark_all_todos_completed(self, todo_list: dict) -> None:
         """Sets all todos completed status to True."""
