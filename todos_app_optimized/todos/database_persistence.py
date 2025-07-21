@@ -32,9 +32,8 @@ class DatabasePersistence:
             with connection:
                 yield connection
         except OperationalError:
-            logger.exception(
-                f"Unable to get a connection to: {self.dbname}. Exiting."
-            )
+            logger.exception("Unable to get a connection to: %s. Exiting.",
+                             self.dbname)
             sys.exit(1)
         finally:
             if connection:
@@ -158,8 +157,7 @@ class DatabasePersistence:
                 result = cursor.fetchone()
                 if result is None:
                     return None
-                else:
-                    lst = dict(result)
+                lst = dict(result)
         except DatabaseError as e:
             logger.exception(e)
             return None
@@ -186,9 +184,23 @@ class DatabasePersistence:
         except DatabaseError as e:
             logger.exception(e)
 
-    def delete_todo(self, todo_list: list, todo_id: int) -> None:
+    def delete_todo(self, todo_id: int, todo_list_id: list) -> None:
         """Deletes the todo with the given todo_id from the given todo_list."""
-        pass
+
+        query = dedent("""
+                DELETE FROM todos WHERE id = %s and list_id = %s
+        """)
+
+        logger.info(
+            "Executing query: %s with todo_id: %s and todo_list_id: %s",
+            query, todo_id, todo_list_id
+        )
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query, (todo_id, todo_list_id))
+        except DatabaseError as e:
+            logger.exception(e)
 
     def update_todo_status(self, todo: dict, is_completed: bool) -> None:
         """Sets the given todo's completed status to True."""
