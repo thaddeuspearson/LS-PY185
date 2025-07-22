@@ -59,7 +59,6 @@ class DatabasePersistence:
 
         fetchall = kwargs.get("fetchall", False)
         fetchone = kwargs.get("fetchone", False)
-
         if fetchall and fetchone:
             raise ValueError(
                 "Cannot use both 'fetchall' and 'fetchone' in the same call."
@@ -105,17 +104,20 @@ class DatabasePersistence:
         """Gets all lists in the current session."""
 
         query = dedent("""
-            SELECT * FROM lists
+            SELECT
+                l.id,
+                l.title,
+                COUNT(t.id) AS todo_count,
+                COUNT(t.completed)
+                    FILTER (WHERE NOT t.completed) AS todos_remaining
+            FROM lists l
+            LEFT JOIN todos t ON l.id = t.list_id
+            GROUP BY l.id, l.title
+            ORDER BY l.title
         """)
 
         results = self._execute_query(query, fetchall=True)
-        lists = [dict(row) for row in results]
-
-        for lst in lists:
-            todos = self._find_todos_for_list(lst['id'])
-            lst.setdefault('todos', todos)
-
-        return lists
+        return [dict(row) for row in results]
 
     def create_list(self, title: str) -> None:
         """Creates a new todo list."""

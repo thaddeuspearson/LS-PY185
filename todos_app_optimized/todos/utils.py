@@ -27,23 +27,19 @@ def find_todo_by_id(todo_id: int, todo_list: list) -> dict | None:
     )
 
 
-def todos_remaining(todo_lst: dict) -> int:
-    return sum(1 for todo in todo_lst["todos"] if not todo["completed"])
-
-
 def is_list_completed(todo_lst: list) -> bool:
-    return len(todo_lst["todos"]) > 0 and todos_remaining(todo_lst) == 0
+    return todo_lst["todo_count"] > 0 and todo_lst["todos_remaining"] == 0
 
 
 def is_todo_completed(todo: dict) -> bool:
     return todo["completed"]
 
 
-def sort_items(items: list, select_completed: Callable) -> list:
+def sort_items(todo_lists: list[dict], select_completed: Callable) -> list:
     incompleted = []
     completed = []
 
-    for lst in sorted(items, key=lambda item: item["title"].lower()):
+    for lst in sorted(todo_lists, key=lambda lst: lst["title"].lower()):
         if select_completed(lst):
             completed.append(lst)
         else:

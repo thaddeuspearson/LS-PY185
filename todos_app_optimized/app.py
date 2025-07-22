@@ -18,12 +18,12 @@ from todos.utils import (
     is_list_completed,
     is_todo_completed,
     sort_items,
-    todos_remaining,
 )
 from todos.database_persistence import DatabasePersistence
 
 app = Flask(__name__)
 app.secret_key = token_hex(32)
+
 storage = DatabasePersistence()
 
 
@@ -77,8 +77,8 @@ def add_todo_list():
 @app.route("/lists", methods=["GET"])
 def get_lists():
     lists = sort_items(g.storage.all_lists(), is_list_completed)
-    return render_template('lists.html', lists=lists,
-                           todos_remaining=todos_remaining)
+    # lists = g.storage.all_lists()
+    return render_template('lists.html', lists=lists)
 
 
 @app.route("/lists", methods=["POST"])
