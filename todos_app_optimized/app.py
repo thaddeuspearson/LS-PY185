@@ -24,6 +24,7 @@ from todos.database_persistence import DatabasePersistence
 
 app = Flask(__name__)
 app.secret_key = token_hex(32)
+storage = DatabasePersistence()
 
 
 def require_list(f):
@@ -60,7 +61,7 @@ def list_utilities_processor():
 
 @app.before_request
 def load_data():
-    g.storage = DatabasePersistence()
+    g.storage = storage
 
 
 @app.route("/")
