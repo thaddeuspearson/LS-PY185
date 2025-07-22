@@ -14,7 +14,6 @@ from werkzeug.exceptions import NotFound
 from todos.utils import (
     error_for_list_title,
     error_for_todo,
-    find_todo_by_id,
     is_list_completed,
     is_todo_completed,
     sort_items,
@@ -36,19 +35,6 @@ def require_list(f):
         if not lst:
             raise NotFound(description="List not Found")
         return f(lst=lst, *args, **kwargs)
-    return decorated_function
-
-
-def require_todo(f):
-    @wraps(f)
-    @require_list
-    def decorated_function(lst, *args, **kwargs):
-        todo_id = kwargs.get("todo_id")
-        todo = find_todo_by_id(todo_id, lst["todos"])
-
-        if not todo:
-            raise NotFound(description="Todo not found")
-        return f(lst=lst, todo=todo, *args, **kwargs)
     return decorated_function
 
 
@@ -77,7 +63,6 @@ def add_todo_list():
 @app.route("/lists", methods=["GET"])
 def get_lists():
     lists = sort_items(g.storage.all_lists(), is_list_completed)
-    # lists = g.storage.all_lists()
     return render_template('lists.html', lists=lists)
 
 
@@ -96,12 +81,13 @@ def create_list():
 @app.route("/lists/<int:list_id>", methods=["POST"])
 @require_list
 def update_list(lst, list_id):
-    title = request.form["list_title"].strip()
-    error = error_for_list_title(title, g.storage.all_lists())
+    new_title = request.form["list_title"].strip()
+    error = error_for_list_title(new_title, g.storage.all_lists())
     if error:
         flash(error, "error")
-        return render_template("/edit_list.html", lst=lst, title=title)
-    g.storage.update_list(list_id, title)
+        return render_template("/edit_list.html", lst=lst,
+                               list_id=list_id, title=new_title)
+    g.storage.update_list(list_id, new_title)
     flash('The list title has been updated', "success")
     return redirect(url_for("display_list", list_id=list_id))
 
@@ -118,14 +104,15 @@ def delete_list(lst, list_id):
 @app.route("/lists/<int:list_id>", methods=["GET"])
 @require_list
 def display_list(lst, list_id):
-    lst["todos"] = sort_items(lst["todos"], is_todo_completed)
+    todos = g.storage.find_todos_for_list(lst['id'])
+    lst["todos"] = sort_items(todos, is_todo_completed)
     return render_template("list.html", lst=lst, list_id=list_id)
 
 
 @app.route("/lists/<int:list_id>/edit", methods=["GET"])
 @require_list
 def edit_list(lst, list_id):
-    return render_template("edit_list.html", lst=lst)
+    return render_template("edit_list.html", lst=lst, list_id=list_id)
 
 
 @app.route("/lists/<int:list_id>/todos", methods=["POST"])
@@ -142,8 +129,7 @@ def create_todo(lst, list_id):
 
 
 @app.route("/lists/<int:list_id>/todos/<int:todo_id>/toggle", methods=["POST"])
-@require_todo
-def update_todo_status(lst, todo, list_id, todo_id):
+def update_todo_status(list_id, todo_id):
     is_completed = request.form["completed"] == "True"
     g.storage.update_todo_status(todo_id, list_id, is_completed)
     flash("The todo has been updated.", "success")
@@ -151,8 +137,7 @@ def update_todo_status(lst, todo, list_id, todo_id):
 
 
 @app.route("/lists/<int:list_id>/todos/<int:todo_id>/delete", methods=["POST"])
-@require_todo
-def delete_todo(lst, todo, list_id, todo_id):
+def delete_todo(list_id, todo_id):
     g.storage.delete_todo(todo_id, list_id)
     flash("The todo has been deleted.", "success")
     return redirect(url_for("display_list", list_id=list_id))

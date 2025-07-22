@@ -7,7 +7,7 @@
                 <ul>
                     <li>
                         <form class="delete" 
-                              action="{{ url_for('delete_list', list_id=lst.id) }}"
+                              action="{{ url_for('delete_list', list_id=list_id) }}"
                               method="post">
                             <button type="submit" class="delete">Delete List</button>
                         </form>
@@ -16,7 +16,7 @@
             </header>
         </section>
 
-        <form action="{{ url_for('update_list', list_id=lst.id) }}" method="post">
+        <form action="{{ url_for('update_list', list_id=list_id) }}" method="post">
             <dl>
                 <dt>
                     <label for="list-title">Enter the new list title:</label>
@@ -28,7 +28,7 @@
             </dl>
             <fieldset class="actions">
                 <input type="submit" value="Save">
-                <a href="{{ url_for('display_list', list_id=lst.id) }}">Cancel</a>
+                <a href="{{ url_for('display_list', list_id=list_id) }}">Cancel</a>
             </fieldset>
         </form>
     {% endblock %}

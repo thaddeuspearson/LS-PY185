@@ -115,7 +115,6 @@ class DatabasePersistence:
             GROUP BY l.id, l.title
             ORDER BY l.title
         """)
-
         results = self._execute_query(query, fetchall=True)
         return [dict(row) for row in results]
 
@@ -143,7 +142,7 @@ class DatabasePersistence:
         """)
         self._execute_query(query, (list_id,))
 
-    def _find_todos_for_list(self, todo_list_id: int) -> list[dict]:
+    def find_todos_for_list(self, todo_list_id: int) -> list[dict]:
         """Finds all todos associated with the given todo_list_id."""
 
         query = dedent("""
@@ -156,14 +155,22 @@ class DatabasePersistence:
         """Finds and returns the list associated with the given id or None."""
 
         query = dedent("""
-            SELECT * FROM lists WHERE id = %s
+            SELECT
+                l.id,
+                l.title,
+                COUNT(t.id) AS todo_count,
+                COUNT(t.completed)
+                    FILTER (WHERE NOT t.completed) AS todos_remaining
+            FROM lists l
+            LEFT JOIN todos t ON l.id = t.list_id
+            WHERE l.id = %s
+            GROUP BY l.id, l.title
+            ORDER BY l.title
         """)
         result = self._execute_query(query, (todo_list_id,), fetchone=True)
         if result is None:
             return None
-        lst = dict(result)
-        lst["todos"] = self._find_todos_for_list(todo_list_id)
-        return lst
+        return dict(result)
 
     def create_todo(self, todo_title: str, todo_list_id: int) -> None:
         """Creates a todo in the given todo_list."""
