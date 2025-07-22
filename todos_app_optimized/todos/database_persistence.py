@@ -51,14 +51,19 @@ class DatabasePersistence:
             logger.exception(e)
             sys.exit(1)
 
-    def _execute_query(self, query: str,
-                       params: tuple = (), **kwargs) -> list | None:
+    def _execute_query(self, query: str, params: tuple = (),
+                       **kwargs) -> list[dict] | dict | None:
         """Executes the given query with given params on the connected DB."""
 
         logger.info("Executing query %s with params %s", query, params)
 
         fetchall = kwargs.get("fetchall", False)
         fetchone = kwargs.get("fetchone", False)
+
+        if fetchall and fetchone:
+            raise ValueError(
+                "Cannot use both 'fetchall' and 'fetchone' in the same call."
+            )
 
         try:
             with self._database_cursor() as cursor:
@@ -94,7 +99,7 @@ class DatabasePersistence:
                     ON DELETE CASCADE
             );
         """)
-        self._execute_query(query, None)
+        self._execute_query(query, params=())
 
     def all_lists(self) -> list[dict]:
         """Gets all lists in the current session."""
