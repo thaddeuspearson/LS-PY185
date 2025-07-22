@@ -118,7 +118,7 @@ def delete_list(lst, list_id):
 @require_list
 def display_list(lst, list_id):
     lst["todos"] = sort_items(lst["todos"], is_todo_completed)
-    return render_template("list.html", lst=lst)
+    return render_template("list.html", lst=lst, list_id=list_id)
 
 
 @app.route("/lists/<int:list_id>/edit", methods=["GET"])
@@ -134,7 +134,7 @@ def create_todo(lst, list_id):
     error = error_for_todo(todo_title)
     if error:
         flash(error, "error")
-        return render_template("/list.html", lst=lst)
+        return render_template("/list.html", lst=lst, list_id=list_id)
     g.storage.create_todo(todo_title, list_id)
     flash("The todo has been created.", "success")
     return redirect(url_for("display_list", list_id=list_id))

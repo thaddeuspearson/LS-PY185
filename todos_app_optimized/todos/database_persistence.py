@@ -51,6 +51,31 @@ class DatabasePersistence:
             logger.exception(e)
             sys.exit(1)
 
+    def _execute_query(self, query: str,
+                       params: tuple = (), **kwargs) -> list | None:
+        """Executes the given query with given params on the connected DB."""
+
+        logger.info("Executing query %s with params %s", query, params)
+
+        fetchall = kwargs.get("fetchall", False)
+        fetchone = kwargs.get("fetchone", False)
+
+        try:
+            with self._database_cursor() as cursor:
+                cursor.execute(query, params)
+
+                if fetchall:
+                    return cursor.fetchall()
+                if fetchone:
+                    return cursor.fetchone()
+
+        except DatabaseError as e:
+            logger.exception(e)
+
+        if fetchall or fetchone:
+            return []
+        return None
+
     def _setup_schema(self):
         """Creates the database schema if the tables do not exist"""
 
@@ -69,14 +94,7 @@ class DatabasePersistence:
                     ON DELETE CASCADE
             );
         """)
-
-        logger.info("Executing query: %s", query)
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query)
-        except DatabaseError as e:
-            logger.exception(e)
+        self._execute_query(query, None)
 
     def all_lists(self) -> list[dict]:
         """Gets all lists in the current session."""
@@ -85,16 +103,7 @@ class DatabasePersistence:
             SELECT * FROM lists
         """)
 
-        logger.info("Executing query: %s", query)
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query)
-                results = cursor.fetchall()
-        except DatabaseError as e:
-            logger.exception(e)
-            return []
-
+        results = self._execute_query(query, fetchall=True)
         lists = [dict(row) for row in results]
 
         for lst in lists:
@@ -109,14 +118,7 @@ class DatabasePersistence:
         query = dedent("""
             INSERT INTO lists (title) VALUES (%s)
         """)
-
-        logger.info("Executing query: %s with title: %s", query, title)
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query, (title,))
-        except DatabaseError as e:
-            logger.exception(e)
+        self._execute_query(query, (title,))
 
     def update_list(self, list_id: int, new_title: str) -> None:
         """Updates the given todo list."""
@@ -124,15 +126,7 @@ class DatabasePersistence:
         query = dedent("""
             UPDATE lists SET title = %s WHERE id = %s
         """)
-
-        logger.info("Executing query: %s with new title: %s and id: %s",
-                    query, new_title, list_id)
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query, (new_title, list_id))
-        except DatabaseError as e:
-            logger.exception(e)
+        self._execute_query(query, (new_title, list_id))
 
     def delete_list(self, list_id: int) -> None:
         """Deletes the given todo list."""
@@ -140,14 +134,7 @@ class DatabasePersistence:
         query = dedent("""
             DELETE from lists WHERE id = %s
         """)
-
-        logger.info("Executing query: %s with id: %s", query, list_id)
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query, (list_id,))
-        except DatabaseError as e:
-            logger.exception(e)
+        self._execute_query(query, (list_id,))
 
     def _find_todos_for_list(self, todo_list_id: int) -> list[dict]:
         """Finds all todos associated with the given todo_list_id."""
@@ -155,19 +142,8 @@ class DatabasePersistence:
         query = dedent("""
             SELECT * FROM todos WHERE list_id = %s
         """)
-
-        logger.info("Executing query: %s with list_id %s", query, todo_list_id)
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query, (todo_list_id,))
-                todos = cursor.fetchall()
-        except DatabaseError as e:
-            logger.exception(e)
-            return []
-
-        todos = [dict(todo) for todo in todos]
-        return todos
+        todos = self._execute_query(query, (todo_list_id,), fetchall=True)
+        return [dict(todo) for todo in todos]
 
     def find_list(self, todo_list_id: int) -> dict | None:
         """Finds and returns the list associated with the given id or None."""
@@ -175,23 +151,11 @@ class DatabasePersistence:
         query = dedent("""
             SELECT * FROM lists WHERE id = %s
         """)
-
-        logger.info("Executing query: %s with todo_list_id: %s",
-                    query, todo_list_id)
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query, (todo_list_id,))
-                result = cursor.fetchone()
-                if result is None:
-                    return None
-                lst = dict(result)
-        except DatabaseError as e:
-            logger.exception(e)
+        result = self._execute_query(query, (todo_list_id,), fetchone=True)
+        if result is None:
             return None
-
-        todos = self._find_todos_for_list(todo_list_id)
-        lst.setdefault('todos', todos)
+        lst = dict(result)
+        lst["todos"] = self._find_todos_for_list(todo_list_id)
         return lst
 
     def create_todo(self, todo_title: str, todo_list_id: int) -> None:
@@ -200,54 +164,25 @@ class DatabasePersistence:
         query = dedent("""
             INSERT INTO todos (title, list_id) VALUES (%s, %s)
         """)
-
-        logger.info(
-            "Executing query: %s with todo_title: %s and todo_list_id: %s",
-            query, todo_title, todo_list_id
-        )
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query, (todo_title, todo_list_id))
-        except DatabaseError as e:
-            logger.exception(e)
+        self._execute_query(query, (todo_title, todo_list_id))
 
     def delete_todo(self, todo_id: int, todo_list_id: int) -> None:
         """Deletes the todo with the given todo_id from the given todo_list."""
 
         query = dedent("""
-                DELETE FROM todos WHERE id = %s and list_id = %s
+            DELETE FROM todos WHERE id = %s and list_id = %s
         """)
-
-        logger.info(
-            "Executing query: %s with todo_id: %s and todo_list_id: %s",
-            query, todo_id, todo_list_id
-        )
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query, (todo_id, todo_list_id))
-        except DatabaseError as e:
-            logger.exception(e)
+        self._execute_query(query, (todo_id, todo_list_id))
 
     def update_todo_status(self, todo_id: int, todo_list_id: int,
                            is_completed: bool) -> None:
         """Sets the given todo's completed status to True."""
 
         query = dedent("""
-                UPDATE todos SET completed = %s
-                WHERE id = %s AND list_id = %s
+            UPDATE todos SET completed = %s
+            WHERE id = %s AND list_id = %s
         """)
-
-        logger.info("Executing query: %s with todo_id: %s "
-                    "and todo_list_id: %s and is_completed = %s",
-                    query, is_completed, todo_id, todo_list_id)
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query, (is_completed, todo_id, todo_list_id))
-        except DatabaseError as e:
-            logger.exception(e)
+        self._execute_query(query, (is_completed, todo_id, todo_list_id))
 
     def mark_all_todos_completed(self, todo_list_id: int) -> None:
         """Sets all todos completed status to True."""
@@ -255,12 +190,4 @@ class DatabasePersistence:
         query = dedent("""
             UPDATE todos SET completed = True WHERE list_id = %s
         """)
-
-        logger.info("Executing query: %s with todo_list_id: %s",
-                    query, todo_list_id)
-
-        try:
-            with self._database_cursor() as cursor:
-                cursor.execute(query, (todo_list_id,))
-        except DatabaseError as e:
-            logger.exception(e)
+        self._execute_query(query, (todo_list_id,))
